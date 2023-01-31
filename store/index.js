@@ -129,10 +129,8 @@ export const actions = {
           userId: response.data.localId,
           email: response.data.email,
         });
-        console.log(response.data);
-        alert(authData);
       })
-      .catch((error) => alert(error.response.data.message));
+      .catch((error) => console.log(error.response.data.message));
   },
 
   addRecipe({ commit, state }, recipe) {
