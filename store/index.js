@@ -1,4 +1,5 @@
 import axios from "axios";
+import Cookie from "js-cookie";
 
 export const state = () => ({
   /* 
@@ -62,6 +63,14 @@ export const getters = {
   isAuthenticated(state) {
     return state.token != null;
   },
+
+  userId(state) {
+    return state.userData.userId;
+  },
+
+  userEmail(state) {
+    return state.userData.email;
+  },
 };
 
 export const mutations = {
@@ -79,6 +88,10 @@ export const mutations = {
 
   setUserData(state, payload) {
     state.userData = payload;
+  },
+
+  setLikeData(state, payload) {
+    return state.recipes.dataLikes.push(payload);
   },
 };
 
@@ -123,12 +136,17 @@ export const actions = {
         displayName: authData.displayName,
       })
       .then((response) => {
-        commit("setToken", response.data.idToken);
-        commit("setUserData", {
+        const userData = {
           username: response.data.displayName,
           userId: response.data.localId,
           email: response.data.email,
-        });
+        };
+        commit("setToken", response.data.idToken);
+        commit("setUserData", userData);
+        localStorage.setItem("token", response.data.idToken);
+        Cookie.set("jwt", response.data.idToken);
+        localStorage.setItem("user", JSON.stringify(userData));
+        Cookie.set("acc_user", JSON.stringify(userData));
       })
       .catch((error) => console.log(error.response.data.message));
   },
@@ -138,10 +156,86 @@ export const actions = {
       .post(
         "https://vue-js-project-9f7db-default-rtdb.firebaseio.com/datarecipe.json?auth=" +
           state.token,
-        recipe
+        {
+          ...recipe,
+          userId: state.userData.userId,
+          username: state.userData.username,
+          dataLikes: ["null"],
+        }
       )
       .then((response) => {
-        commit("addNewRecipe", recipe);
+        commit("addNewRecipe", {
+          ...recipe,
+          userId: state.userData.userId,
+          username: state.userData.username,
+          dataLikes: ["null"],
+        });
       });
+  },
+  initAuth({ commit }, req) {
+    let user;
+    let token;
+    if (req) {
+      if (!req.headers.cookie) {
+        return;
+      }
+      const jwtCookie = req.headers.cookie
+        .split(";")
+        .find((c) => c.trim().startsWith("jwt="));
+
+      const accUserCookie = req.headers.cookie
+        .split(";")
+        .find((c) => c.trim().startsWith("acc_user="));
+
+      const userCookie = accUserCookie.substr(accUserCookie.indexOf("=") + 1);
+      user = JSON.parse(decodeURIComponent(userCookie));
+
+      if (!jwtCookie) {
+        return;
+      }
+      token = jwtCookie.split("=")[1];
+    } else {
+      token = localStorage.getItem("token");
+      user = JSON.parse(localStorage.getItem("user"));
+    }
+    commit("setToken", token);
+    commit("setUserData", user);
+  },
+  logout({ commit }) {
+    commit("setToken", null);
+    Cookie.remove("jwt");
+    Cookie.remove("acc_user");
+    if (process.client) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+  },
+  likeUpdate({ commit, state, dispatch }, recipe) {
+    return axios
+      .put(
+        "https://vue-js-project-9f7db-default-rtdb.firebaseio.com/datarecipe/" +
+          recipe.recipeId +
+          ".json?auth=" +
+          state.token,
+        recipe.newDataRecipe
+      )
+      .then((res) => dispatch("getRecipe"));
+  },
+  getRecipe({ commit }) {
+    return axios
+      .get(
+        "https://vue-js-project-9f7db-default-rtdb.firebaseio.com/datarecipe.json"
+      )
+      .then((response) => {
+        const recipeArray = [];
+        for (const key in response.data) {
+          recipeArray.push({ ...response.data[key], id: key });
+        }
+        commit("setRecipe", recipeArray);
+      })
+      .catch((e) => context.error(e));
+  },
+  addLike({ commit }, userEmail) {
+    commit("setLikeData", userEmail);
   },
 };

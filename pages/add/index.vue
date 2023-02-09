@@ -1,5 +1,5 @@
 <template>
-  <div class="body">
+  <!-- <div class="body">
     <main>
       <div class="add-recipe">
         <label>
@@ -29,10 +29,44 @@
       </div>
       {{ newRecipe }}
     </main>
-  </div>
+  </div> -->
+  <form class="container" @submit.prevent="addRecipe">
+    <Input labels="Recipe Title" :model="changeRecipe"></Input>
+    <Input labels="Recipe Image" :model="changeImage"></Input>
+    <TextArea :model="changeDesc"></TextArea>
+    <Input
+      labels="Ingredients"
+      text="add"
+      v-for="(item, index) in ingredientCount"
+      :key="item"
+      :model="changeIngredient"
+      :click="addIngredient"
+      :count="ingredientCount"
+      :index="index"
+      :Delete="deleteIngredient"
+      :value="newRecipe.ingredients[index]"
+    ></Input>
+    <Input
+      labels="Directions"
+      text="add"
+      v-for="(item, index) in directionCount"
+      :key="item"
+      :model="changeDirection"
+      :click="addDirection"
+      :count="directionCount"
+      :index="index"
+      :Delete="deleteDirection"
+      :value="newRecipe.directions[index]"
+    ></Input>
+    <Button text="Submit"></Button>
+    {{ newRecipe }}
+  </form>
 </template>
 <script>
-import axios from "axios";
+// import axios from "axios";
+import Button from "../../components/newRecipe/Button.vue";
+import Input from "../../components/newRecipe/Input.vue";
+import TextArea from "../../components/newRecipe/textArea.vue";
 
 export default {
   data() {
@@ -40,12 +74,20 @@ export default {
       newRecipe: {
         recipeImage: "",
         recipeTitle: "",
-        likes: 0,
-        body: "",
+        description: "",
+        ingredients: [],
+        directions: [],
       },
+      ingredientCount: 1,
+      directionCount: 1,
     };
   },
-  middleware: "auth",
+  components: {
+    Button,
+    Input,
+    TextArea,
+  },
+  middleware: ["check-auth", "auth"],
   methods: {
     addRecipe() {
       // let newId = this.$store.getters.lastIdRecipe + 1
@@ -62,6 +104,48 @@ export default {
       this.$store
         .dispatch("addRecipe", this.newRecipe)
         .then(() => this.$router.push("/"));
+    },
+    changeRecipe(text) {
+      this.newRecipe.recipeTitle = text.target.value;
+    },
+    changeImage(text) {
+      this.newRecipe.recipeImage = text.target.value;
+    },
+    changeDesc(text) {
+      this.newRecipe.description = text.target.value;
+    },
+    changeIngredient(text) {
+      if (this.newRecipe.ingredients.length <= this.ingredientCount - 1) {
+        this.newRecipe.ingredients.push(text.target.value);
+      } else {
+        this.newRecipe.ingredients[this.ingredientCount - 1] =
+          text.target.value;
+      }
+    },
+    changeDirection(text) {
+      if (this.newRecipe.directions.length <= this.directionCount - 1) {
+        this.newRecipe.directions.push(text.target.value);
+      } else {
+        this.newRecipe.directions[this.directionsCount - 1] = text.target.value;
+      }
+    },
+    addIngredient() {
+      this.ingredientCount++;
+      console.log(this.ingredientCount);
+    },
+    addDirection() {
+      this.directionCount++;
+    },
+    deleteIngredient(index) {
+      this.newRecipe.ingredients = this.newRecipe.ingredients.splice(
+        index - 1,
+        1
+      );
+      this.ingredientCount--;
+    },
+    deleteDirection(index) {
+      this.newRecipe.direction = this.newRecipe.direction.splice(index - 1, 1);
+      this.directionCount--;
     },
   },
 };

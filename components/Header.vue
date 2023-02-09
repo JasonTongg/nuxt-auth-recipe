@@ -1,71 +1,62 @@
 <template>
-  <div>
-    <header class="header">
-      <h1 class="header-title">Food Recipes</h1>
-      <nav class="header-nav">
-        <nuxtLink tag="button" to="/" class="header-nav__link"> Home </nuxtLink>
-        <nuxtLink tag="button" to="/add" class="header-nav__link">
-          Add Recipes
-        </nuxtLink>
-        <nuxt-link
-          tag="a"
-          to="/user/login"
-          class="header-nav__link"
-          v-if="!$store.getters.isAuthenticated"
-        >
-          Login
-        </nuxt-link>
-        <a
-          class="header-nav__link"
-          v-if="$store.getters.isAuthenticated"
-          @click="logout"
-        >
-          Logout
-        </a>
-        <a class="header-nav__link" v-if="$store.getters.isAuthenticated">
-          {{ $store.state.userData.username }}
-        </a>
-      </nav>
-    </header>
-  </div>
+  <header class="navbar bg-light">
+    <div class="container-fluid">
+      <nuxt-link tag="a" class="navbar-brand text-brand" to="/">
+        <img
+          src="images/logo.png"
+          alt="Logo"
+          width="44"
+          height="44"
+          class="d-inline-block align-text-center"
+        />
+        Food Recipes
+      </nuxt-link>
+      <ul class="nav justify-content-end">
+        <li class="nav-item">
+          <nuxt-link to="/" tag="a" class="nav-link active" aria-current="page"
+            >Home</nuxt-link
+          >
+        </li>
+        <li class="nav-item">
+          <nuxt-link class="nav-link" to="/add">New Recipe</nuxt-link>
+        </li>
+        <li class="nav-item" v-if="!$store.getters.isAuthenticated">
+          <nuxt-link class="nav-link" to="/user/login">Login</nuxt-link>
+        </li>
+        <li class="nav-item" v-if="$store.getters.isAuthenticated">
+          <a class="nav-link" @click="logout">Logout</a>
+        </li>
+        <li class="nav-item" v-if="$store.getters.isAuthenticated">
+          <nuxt-link class="nav-link" tag="a" to="/user">{{
+            $store.state.userData.username
+          }}</nuxt-link>
+        </li>
+      </ul>
+    </div>
+  </header>
 </template>
+
 <script>
 export default {
   methods: {
     logout() {
-      this.$store.commit("setToken", null);
-      this.$router.push("/");
+      this.$store.dispatch("logout");
+      this.$router.push("/user/login");
     },
   },
 };
 </script>
+
 <style>
-.body {
-  margin: 0px;
-}
-
 header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-left: 40px;
-  padding-right: 40px;
-  background-color: #eef2e6;
+  margin-bottom: 20px;
 }
 
-main {
-  margin: 22px;
+a:hover {
+  cursor: pointer;
 }
 
-.recipes {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.header-nav__link {
-  margin-left: 20px;
-  color: black;
-  text-decoration: none;
-  font-size: 20px;
+.text-brand {
+  font-family: "Satisfy", cursive;
 }
 </style>

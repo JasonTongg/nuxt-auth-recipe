@@ -54,6 +54,13 @@ export default {
         .then(() => this.$router.push("/"));
     },
   },
+  computed: {
+    recipes() {
+      const userId = this.$store.getters.userId;
+      const recipes = this.$store.getters.recipeData;
+      return recipes.filter((recipe) => recipe.userId == userId);
+    },
+  },
 };
 </script>
 <style scoped>

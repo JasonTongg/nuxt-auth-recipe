@@ -5,11 +5,12 @@
 </template>
 
 <script>
-import RecipeList from '../components/recipe/RecipeList.vue'
+import RecipeList from "../components/recipe/RecipeList.vue";
 export default {
   name: "IndexPage",
+  middleware: "check-auth",
   components: {
-    RecipeList
+    RecipeList,
   },
   data() {
     return {
