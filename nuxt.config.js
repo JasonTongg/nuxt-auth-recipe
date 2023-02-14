@@ -24,6 +24,10 @@ export default {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;1,300&family=Satisfy&display=swap",
       },
+      {
+        rel: "stylesheet",
+        href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
+      },
     ],
   },
 
@@ -40,11 +44,14 @@ export default {
   buildModules: [],
 
   // Modules: https://go.nuxtjs.dev/config-modules
-  modules: [],
+  modules: ["@nuxtjs/axios"],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {},
   generate: {
     fallback: true,
+  },
+  axios: {
+    baseURL: "https://vue-js-project-9f7db-default-rtdb.firebaseio.com",
   },
 };

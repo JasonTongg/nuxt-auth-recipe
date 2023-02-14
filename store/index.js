@@ -69,7 +69,7 @@ export const getters = {
   },
 
   userEmail(state) {
-    return state.userData.email;
+    return state.userData?.email;
   },
 };
 
@@ -93,6 +93,16 @@ export const mutations = {
   setLikeData(state, payload) {
     return state.recipes.dataLikes.push(payload);
   },
+
+  deleteRecipe(state, payload) {
+    const recipes = state.recipes.filter((item) => item.id !== payload);
+    state.recipes = recipes;
+  },
+
+  getRecipe(state, payload) {
+    const recipes = state.recipes.filter((item) => item.id === payload.id);
+    state.recipes[recipes.id] = payload;
+  },
 };
 
 export const actions = {
@@ -107,8 +117,21 @@ export const actions = {
   //                     })
   //                 .catch(e => context.error(e))
   // }
-  nuxtServerInit({ commit }) {
-    return axios
+  updateRecipe({ dispatch, state }, recipe) {
+    return this.$axios
+      .$put(
+        "/datarecipe/" + recipe.id + ".json?auth=" + state.token,
+        recipe.newRecipe
+      )
+      .then((res) => dispatch("getRecipe"));
+  },
+  deleteRecipe({ commit, state }, recipeId) {
+    return this.$axios
+      .$delete("/datarecipe/" + recipeId + ".json?auth=" + state.token)
+      .then((res) => commit("deleteRecipe"), recipeId);
+  },
+  nuxtServerInit({ commit }, { app }) {
+    return app.$axios
       .get(
         "https://vue-js-project-9f7db-default-rtdb.firebaseio.com/datarecipe.json"
       )
@@ -128,53 +151,58 @@ export const actions = {
       ? "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="
       : "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=";
 
-    return axios
-      .post(authUrl + webAPIKey, {
+    return this.$axios
+      .$post(authUrl + webAPIKey, {
         email: authData.email,
         password: authData.password,
         returnSecureToken: true,
         displayName: authData.displayName,
       })
       .then((response) => {
-        const userData = {
-          username: response.data.displayName,
-          userId: response.data.localId,
-          email: response.data.email,
-        };
-        commit("setToken", response.data.idToken);
-        commit("setUserData", userData);
+        commit("setToken", response.idToken);
+        commit("setUserData", {
+          username: response.displayName,
+          userId: response.localId,
+          email: response.email,
+        });
         localStorage.setItem("token", response.data.idToken);
         Cookie.set("jwt", response.data.idToken);
         localStorage.setItem("user", JSON.stringify(userData));
         Cookie.set("acc_user", JSON.stringify(userData));
+        localStorage.setItem(
+          "tokenExpiration",
+          new Date().getTime() + Number.parseInt(response.data.expiresIn) * 1000
+        );
+        Cookie.set(
+          "expirationDate",
+          new Date().getTime() + Number.parseInt(response.data.expiresIn) * 1000
+        );
       })
       .catch((error) => console.log(error.response.data.message));
   },
 
   addRecipe({ commit, state }, recipe) {
-    return axios
-      .post(
-        "https://vue-js-project-9f7db-default-rtdb.firebaseio.com/datarecipe.json?auth=" +
-          state.token,
-        {
-          ...recipe,
-          userId: state.userData.userId,
-          username: state.userData.username,
-          dataLikes: ["null"],
-        }
-      )
+    return this.$axios
+      .$post("/datarecipe.json?auth=" + state.token, {
+        ...recipe,
+        userId: state.userData.userId,
+        username: state.userData.username,
+        dataLikes: ["null"],
+      })
       .then((response) => {
         commit("addNewRecipe", {
           ...recipe,
+          dataLikes: ["null"],
           userId: state.userData.userId,
           username: state.userData.username,
-          dataLikes: ["null"],
+          id: response.name,
         });
       });
   },
-  initAuth({ commit }, req) {
+  initAuth({ commit, dispatch }, req) {
     let user;
     let token;
+    let expirationDate;
     if (req) {
       if (!req.headers.cookie) {
         return;
@@ -194,9 +222,20 @@ export const actions = {
         return;
       }
       token = jwtCookie.split("=")[1];
+      expirationDate = req.headers.cookie
+        ?.split(";")
+        .find((c) => c.trim().startsWith("expirationDate="))
+        ?.split("=")[1];
     } else {
       token = localStorage.getItem("token");
       user = JSON.parse(localStorage.getItem("user"));
+      expirationDate = localStorage.getItem("tokenExpiration");
+    }
+
+    if (new Date().getTime() > +expirationDate || !token) {
+      console.log("No token or invalid token");
+      dispatch("logout");
+      return;
     }
     commit("setToken", token);
     commit("setUserData", user);
@@ -211,25 +250,23 @@ export const actions = {
     }
   },
   likeUpdate({ commit, state, dispatch }, recipe) {
-    return axios
-      .put(
-        "https://vue-js-project-9f7db-default-rtdb.firebaseio.com/datarecipe/" +
-          recipe.recipeId +
-          ".json?auth=" +
-          state.token,
+    return this.$axios
+      .$put(
+        "/datarecipe/" + recipe.recipeId + ".json?auth=" + state.token,
         recipe.newDataRecipe
       )
       .then((res) => dispatch("getRecipe"));
   },
   getRecipe({ commit }) {
-    return axios
-      .get(
-        "https://vue-js-project-9f7db-default-rtdb.firebaseio.com/datarecipe.json"
-      )
+    return this.$axios
+      .$get("/datarecipe.json")
       .then((response) => {
         const recipeArray = [];
-        for (const key in response.data) {
-          recipeArray.push({ ...response.data[key], id: key });
+        for (const key in response) {
+          recipeArray.push({
+            ...response[key],
+            id: key,
+          });
         }
         commit("setRecipe", recipeArray);
       })

@@ -18,17 +18,43 @@
       <div class="recipes-content__body__review card-footer bg-transparent">
         <img :src="likeImage" alt="Heart" @click="likeClick" />
         <p>{{ likeCount }} likes</p>
+        <button class="delete" v-show="isIcon === true" @click="overlay(true)">
+          <i class="fa fa-trash" aria-hidden="true"></i>
+        </button>
+        <button
+          class="edit"
+          v-show="isIcon === true"
+          @click="editOverlayFunc(true)"
+        >
+          <i class="fa fa-file" aria-hidden="true"></i>
+        </button>
       </div>
     </div>
+    <div class="overlay" v-show="overlayShow === true">
+      <div class="overlayContent">
+        <h2>Are you sure want to delete this recipe?</h2>
+        <div class="buttonContainer">
+          <button class="deleteConfirm" @click="deleteRecipe">Delete</button>
+          <button class="editConfirm" @click="overlay(false)">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <EditForm v-show="editOverlay === true" :recipe="recipe" />
   </div>
 </template>
 <script>
+import EditForm from "../Admin/EditForm.vue";
 export default {
-  props: ["recipe"],
+  props: ["recipe", "isIcon"],
   data() {
     return {
       email: [],
+      overlayShow: false,
+      editOverlay: false,
     };
+  },
+  components: {
+    EditForm,
   },
   computed: {
     likeCount() {
@@ -49,6 +75,12 @@ export default {
     },
   },
   methods: {
+    overlay(toggle) {
+      this.overlayShow = toggle;
+    },
+    editOverlayFunc(toggle) {
+      this.editOverlay = toggle;
+    },
     likeClick() {
       console.log("tes");
       if (!this.$store.getters.isAuthenticated) {
@@ -94,6 +126,10 @@ export default {
         }
       }
     },
+    deleteRecipe() {
+      this.$store.dispatch("deleteRecipe", this.recipe.id);
+      this.overlay(false);
+    },
   },
 };
 </script>
@@ -102,7 +138,74 @@ export default {
   width: 100%;
   height: 25vh;
 }
+.recipes-content__body__review {
+  display: flex;
+  gap: 10px;
+}
 .username {
   margin-bottom: 0px;
+}
+.delete,
+.edit {
+  width: 30px;
+  height: 30px;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+
+.delete {
+  background-color: red;
+}
+
+.edit {
+  background-color: rgb(194, 194, 4);
+}
+
+.deleteConfirm,
+.editConfirm {
+  color: white;
+  border: none;
+  border-radius: 100px;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+.deleteConfirm {
+  background-color: red;
+}
+
+.editConfirm {
+  background-color: rgb(194, 194, 4);
+}
+
+.overlay {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlayContent {
+  background-color: white;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 20px;
+}
+
+.buttonContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 </style>

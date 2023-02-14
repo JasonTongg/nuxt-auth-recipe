@@ -5,6 +5,7 @@
         v-for="data in dataRecipes"
         :key="data.id"
         :recipe="data"
+        :isIcon="isIcon"
       ></RecipeItem>
     </div>
   </div>
@@ -15,7 +16,7 @@ export default {
   components: {
     RecipeItem,
   },
-  props: ["dataRecipes"],
+  props: ["dataRecipes", "isIcon"],
 };
 </script>
 <style>

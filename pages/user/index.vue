@@ -1,11 +1,16 @@
 <template>
   <div>
-    <app-recipe-list :dataRecipes="recipes"></app-recipe-list>
+    <app-recipe-list :dataRecipes="recipes" :isIcon="isIcon"></app-recipe-list>
   </div>
 </template>
 <script>
 import RecipeList from "../../components/recipe/RecipeList.vue";
 export default {
+  data() {
+    return {
+      isIcon: true,
+    };
+  },
   components: {
     "app-recipe-list": RecipeList,
   },
